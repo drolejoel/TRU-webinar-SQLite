@@ -1,0 +1,87 @@
+
+# SQLite
+
+# - Relational database management system (RDBMS) 
+# - Originally created for military use
+# - Self-contained
+# - No server required
+# - ACID compliant: atomic, consistency, isolation, durability
+# - In-memory or single file
+# - Uses SQL to create and save data
+
+
+install.packages("RSQLite")
+install.packages("DBI")
+
+View(mtcars)
+
+library(DBI)
+
+# Create  in-memory RSQLite database
+conn <- dbConnect(RSQLite::SQLite(), ":memory:")
+
+conn
+summary(conn)
+
+# create file-based database
+conn2 <- dbConnect(RSQLite::SQLite(), "C:/Users/usans/Documents/R/SQLITE/TRU2.sqlite")
+
+
+
+# what tables do we have?
+dbListTables(conn2)
+
+# add a table of data
+dbWriteTable(conn2, "mtcars", mtcars)
+
+# what tables do we have now?
+dbListTables(conn2)
+
+# getting field names
+dbListFields(conn2, "mtcars")
+
+# getting the whole table
+dbReadTable(conn2, "mtcars") 
+
+# be more selective - using SQL queries
+# METHOD 1
+dbGetQuery(conn2, "SELECT * FROM mtcars WHERE hp > 200")
+
+
+# METHOD 2 - CHUNKING
+res <- dbSendQuery(conn2, "SELECT * FROM mtcars WHERE hp > 100")
+res
+
+while(!dbHasCompleted(res)){
+  chunk <- dbFetch(res, n = 3)
+  print(nrow(chunk))
+}
+dbClearResult(res)
+
+# Disconnect from the database
+dbDisconnect(conn2)
+
+
+
+# ---------------------
+# Generate Random Data Sets
+library(tidyverse)
+library("wakefield")
+
+n <- 1000000         # 1 million rows of data !!!
+
+df1M <-   tibble(
+  birthdates = birth(n),
+  animals = animal(n),
+  colors = color(n),
+  education = education(n)
+)
+
+conn1m <- dbConnect(RSQLite::SQLite(), "C:/Users/usans/Documents/R/SQLITE/TRU1m.sqlite")
+dbWriteTable(conn1m, "df1M", df1M)
+
+dbGetQuery(conn1m, "SELECT colors FROM df1M")
+dbGetQuery(conn1m, "SELECT colors FROM df1M") %>% 
+  nrow() 
+
+dbDisconnect(conn1m)
